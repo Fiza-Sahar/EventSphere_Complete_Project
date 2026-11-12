@@ -1,11 +1,14 @@
+
 import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+
 import connectDB from './config/db.js';
 import { initSocket } from './config/socket.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
+// Routes
 import authRoutes from './routes/authRoutes.js';
 import expoRoutes from './routes/expoRoutes.js';
 import boothRoutes from './routes/boothRoutes.js';
@@ -29,14 +32,18 @@ const app = express();
 const server = http.createServer(app);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || '*',
+    credentials: true
+}));
+
 app.use(express.json());
 
-// Initialize Socket.io
+// Initialize Socket.IO
 const io = initSocket(server);
 app.set('io', io);
 
-// Connect DB
+// Connect MongoDB Atlas
 connectDB();
 
 // API Routes
@@ -59,15 +66,17 @@ app.use('/api/itinerary', itineraryRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/search', searchRoutes);
 
-// Health check endpoint
+// Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', name: 'EventSphere API Platform', timestamp: new Date() });
+    res.status(200).json({
+        status: 'ok',
+        name: 'EventSphere API Platform',
+        timestamp: new Date()
+    });
 });
 
-// Error handling middleware
+// Error Handling
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`[EventSphere Server] Running on port ${PORT}`);
-});
+// Export HTTP server for Vercel
+export default server;

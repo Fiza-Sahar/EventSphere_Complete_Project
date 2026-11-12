@@ -1,13 +1,26 @@
 import mongoose from 'mongoose';
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
+
+  if (!process.env.MONGO_URI) {
+    throw new Error('MONGO_URI is missing in environment variables');
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/eventsphere');
-    console.log(`[MongoDB] Connected: ${conn.connection.host}`);
+    await mongoose.connect(process.env.MONGO_URI);
+
+    isConnected = mongoose.connection.readyState === 1;
+
+    console.log(`[MongoDB] Connected: ${mongoose.connection.host}`);
   } catch (error) {
+    isConnected = false;
     console.error(`[MongoDB Error] ${error.message}`);
-    console.log('[MongoDB Note] Ensure MongoDB is running locally on port 27017');
-    process.exit(1);
+    throw error;
   }
 };
 
