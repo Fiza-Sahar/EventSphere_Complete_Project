@@ -34,13 +34,25 @@ const server = http.createServer(app);
 // CORS Configuration
 const allowedOrigins = [
     'http://localhost:5173',
+    'https://event-sphere-complete-project-rouge.vercel.app',
     process.env.CLIENT_URL
 ].filter(Boolean);
 
-app.use(cors({
-    origin: allowedOrigins,
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
@@ -98,5 +110,5 @@ app.get('/api/health', (req, res) => {
 // Error Handling
 app.use(errorHandler);
 
-// Export HTTP Server for Vercel WebSocket support
+// Export HTTP Server
 export default server;
