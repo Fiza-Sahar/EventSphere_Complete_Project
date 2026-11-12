@@ -31,20 +31,40 @@ import searchRoutes from './routes/searchRoutes.js';
 const app = express();
 const server = http.createServer(app);
 
-// Middleware
+// CORS Configuration
+const allowedOrigins = [
+    'http://localhost:5173',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || '*',
+    origin: allowedOrigins,
     credentials: true
 }));
 
 app.use(express.json());
 
+// Root Route
+app.get('/', (req, res) => {
+    res.status(200).json({
+        message: 'EventSphere Backend is running!',
+        status: 'success'
+    });
+});
+
+// MongoDB Connection Middleware
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Initialize Socket.IO
 const io = initSocket(server);
 app.set('io', io);
-
-// Connect MongoDB Atlas
-connectDB();
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -78,5 +98,5 @@ app.get('/api/health', (req, res) => {
 // Error Handling
 app.use(errorHandler);
 
-// Export HTTP server for Vercel
+// Export HTTP Server for Vercel WebSocket support
 export default server;
